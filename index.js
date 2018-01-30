@@ -38,7 +38,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		var promises = [];
 		
 		// can take in an array that'll be populated w/ binary assets found by Rollup
-		var fbaAssets = this.options.importStore || [];
+		var fbaAssets = DM.payload.getBinaryAssets() || [];
 
 		// if any of the asset-payloads are dirty, the whole fba needs to be recompiled
 		var isDirty = false;
