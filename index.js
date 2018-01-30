@@ -36,7 +36,7 @@ function AssetsPlugin(DM, options) {
 AssetsPlugin.prototype.apply = function(compiler) {
 	compiler.plugin('emit', (compilation, callback) => {
 		var promises = [];
-		var fbaAssets = [];
+		var fbaAssets = this.options.fbaAssets || [];
 
 		// if any of the asset-payloads are dirty, the whole fba needs to be recompiled
 		var isDirty = false;
