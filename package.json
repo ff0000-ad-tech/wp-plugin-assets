@@ -19,5 +19,11 @@
     "mkdir-recursive": "^0.3.0",
     "ncp": "^2.0.0",
     "walk": "^2.3.9"
+  },
+  "devDependencies": {
+    "eslint": "^4.16.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.5.0",
+    "prettier": "^1.10.2"
   }
 }

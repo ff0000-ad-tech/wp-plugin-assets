@@ -1,17 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const _ = require('lodash');
+const fs = require('fs')
+const path = require('path')
+const _ = require('lodash')
 
-const fbaCompiler = require('fba-compiler');
-const copier = require('./lib/copier.js');
+const fbaCompiler = require('fba-compiler')
+const copier = require('./lib/copier.js')
 
-const debug = require('debug');
-var log = debug('wp-plugin-assets');
-
+const debug = require('debug')
+var log = debug('wp-plugin-assets')
 
 function AssetsPlugin(DM, options) {
-	this.DM = DM;
-	this.options = options;
+	this.DM = DM
+	this.options = options
 	/** TODO 
 			Document `this.options`:
 
@@ -32,7 +31,6 @@ function AssetsPlugin(DM, options) {
 	*/
 }
 
-
 AssetsPlugin.prototype.apply = function(compiler) {
 	compiler.plugin('emit', (compilation, callback) => {
 		var promises = [];
@@ -41,53 +39,44 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		var fbaAssets = this.DM.payload.getBinaryAssets() || [];
 
 		// if any of the asset-payloads are dirty, the whole fba needs to be recompiled
-		var isDirty = false;
+		var isDirty = false
 		for (var i in this.options.assets) {
-			const payload = this.options.assets[i].payload();
+			const payload = this.options.assets[i].payload()
 			if (payload.dirty) {
-				isDirty = true;
-				break;
+				isDirty = true
+				break
 			}
 		}
 
 		// iterate assets
 		for (var i in this.options.assets) {
-			const payload = this.options.assets[i].payload();
-			payload.type = payload.type || 'copy';
-			
+			const payload = this.options.assets[i].payload()
+			payload.type = payload.type || 'copy'
+
 			// if payload type is an fba chunk-type
 			if (payload.type.match(/^fbA/i)) {
 				if (isDirty || payload.dirty) {
 					// append content to fba-compiler
-					payload.modules.forEach((_module) => {
+					payload.modules.forEach(_module => {
 						fbaAssets.push({
 							chunkType: payload.type,
 							path: _module.userRequest
-						});
-					});
+						})
+					})
 				}
-			}
-
-			// if payload type is inline
-			else if (payload.type == 'inline') {
+			} else if (payload.type == 'inline') {
+				// if payload type is inline
 				if (payload.dirty) {
-					log('Inlining ->');
-					payload.modules.forEach((_module) => {
-						log(` ${_module.userRequest}`);
-					});
+					log('Inlining ->')
+					payload.modules.forEach(_module => {
+						log(` ${_module.userRequest}`)
+					})
 				}
-			}
-
-			// if payload type is copy
-			else {
+			} else {
+				// if payload type is copy
 				if (payload.dirty) {
 					// copy the asset to deploy
-					promises.push(
-						copier.copy(
-							payload.modules, 
-							this.options.assets[i].copy
-						)
-					);				
+					promises.push(copier.copy(payload.modules, this.options.assets[i].copy))
 				}
 			}
 
@@ -96,34 +85,32 @@ AssetsPlugin.prototype.apply = function(compiler) {
 				this.DM.payload.store.update({
 					name: payload.name,
 					dirty: false
-				});
+				})
 			}
 		}
 
 		// compile all the assets
 		if (fbaAssets.length) {
-			var payloadOutput = this.DM.payload.get().output;
+			var payloadOutput = this.DM.payload.get().output
 			promises.push(
 				fbaCompiler.compile({
 					target: path.resolve(`${payloadOutput.path}/${payloadOutput.filename}`),
 					assets: fbaAssets
 				})
-			);
+			)
 		}
 
 		// TODO: <img> and background-image declarations would have to be rewritten to payload blobs
 
 		// return to webpack flow
-		Promise.all(promises).then(() => {
-			callback();
-		})
-		.catch((err) => {
-			log(err);
-		});		
-	});
-};
+		Promise.all(promises)
+			.then(() => {
+				callback()
+			})
+			.catch(err => {
+				log(err)
+			})
+	})
+}
 
-
-
-
-module.exports = AssetsPlugin;
+module.exports = AssetsPlugin
