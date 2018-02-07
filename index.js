@@ -11,7 +11,8 @@ var log = debug('wp-plugin-assets')
 function AssetsPlugin(DM, options) {
 	this.DM = DM
 	this.options = options
-	/** TODO 
+	this.prevFbaTimestamps = {}
+	/** TODO
 			Document `this.options`:
 
 			this.options.assets = [
@@ -24,19 +25,26 @@ function AssetsPlugin(DM, options) {
 					],
 					copy: {
 						from: './source-context',
-						to: './destination-context'	
+						to: './destination-context'
 					}
 				}
 			]
 	*/
 }
 
+
 AssetsPlugin.prototype.apply = function(compiler) {
 	compiler.plugin('emit', (compilation, callback) => {
 		var promises = [];
-		
+
 		// can take in an array that'll be populated w/ binary assets found by Rollup
-		var fbaAssets = this.DM.payload.getBinaryAssets() || [];
+
+		var addTimestamp = (asset) => {
+			var { mtimeMs: timestamp } = fs.statSync(asset.path)
+			return Object.assign({ timestamp }, asset)
+		}
+
+		var fbaAssets = this.DM.payload.getBinaryAssets().map(addTimestamp) || [];
 
 		// if any of the asset-payloads are dirty, the whole fba needs to be recompiled
 		var isDirty = false
@@ -89,8 +97,33 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			}
 		}
 
+		var isDirty = (fbaAsset) => {
+			var prevTimestamp = this.prevFbaTimestamps[fbaAsset.path]
+			var currTimestamp = fbaAsset.timestamp
+
+			if (!prevTimestamp) {
+				return true
+			}
+			else if (prevTimestamp !== currTimestamp) {
+				return true
+			}
+			return false
+		}
+
+		var anyDirty = (fbaAssets) => {
+			for (const asset of fbaAssets) {
+				if (isDirty(asset)) return true
+			}
+			return false
+		}
+
+		var anyDirtyFba = anyDirty(fbaAssets)
+
+		// update FBA timestamps for checking if FBA's were changed
+		this.updateFbaTimestamps(fbaAssets)
+
 		// compile all the assets
-		if (fbaAssets.length) {
+		if (fbaAssets.length && anyDirtyFba) {
 			var payloadOutput = this.DM.payload.get().output
 			promises.push(
 				fbaCompiler.compile({
@@ -113,4 +146,11 @@ AssetsPlugin.prototype.apply = function(compiler) {
 	})
 }
 
+AssetsPlugin.prototype.updateFbaTimestamps = function(fbaAssets) {
+	fbaAssets.forEach(asset => {
+		this.prevFbaTimestamps[asset.path] = asset.timestamp
+	})
+}
+
 module.exports = AssetsPlugin
+
