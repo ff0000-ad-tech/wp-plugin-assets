@@ -11,13 +11,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ff0000-ad-tech/wp-plugin-assets.git"
+    "url": "https://github.com/ff0000-ad-tech/wp-plugin-assets.git"
   },
   "author": "RED Interactive Agency",
   "license": "MIT",
   "dependencies": {
     "debug": "git://github.com/gmcdev/debug.git",
-    "fba-compiler": "git://github.com/ff0000-ad-tech/fba-compiler.git",
+    "@ff0000-ad-tech/fba-compiler": "latest",
     "lodash": "^4.17.4",
     "mkdir-recursive": "^0.3.0",
     "ncp": "^2.0.0",
