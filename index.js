@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const _ = require('lodash')
 
-const fbaCompiler = require('fba-compiler')
+const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const copier = require('./lib/copier.js')
 
 const debug = require('debug')
