@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const _ = require('lodash')
 
-const fbaCompiler = require('fba-compiler')
+const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const copier = require('./lib/copier.js')
 
 const debug = require('debug')
@@ -34,6 +34,11 @@ function AssetsPlugin(DM, options) {
 
 
 AssetsPlugin.prototype.apply = function(compiler) {
+	compiler.plugin('compile', () => {
+		// reset binary assets store on each compile
+		this.DM.payload.resetBinaryAssets()
+	})
+
 	compiler.plugin('emit', (compilation, callback) => {
 		var promises = [];
 
