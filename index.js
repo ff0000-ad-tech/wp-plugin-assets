@@ -41,15 +41,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		var promises = []
 		var fbaAssets = []
 
-		// if any of the asset-payloads are dirty, the whole fba needs to be recompiled
-		var isDirty = false
-		for (var i in this.options.assets) {
-			const payload = this.options.assets[i].payload()
-			if (payload && payload.type !== 'inline' && payload.dirty) {
-				isDirty = true
-				break
-			}
-		}
+		const anyDirty = this.DM.payload.store.anyDirty()
 
 		// iterate assets
 		for (var i in this.options.assets) {
@@ -58,39 +50,25 @@ AssetsPlugin.prototype.apply = function(compiler) {
 
 			payload.type = payload.type || 'copy'
 
-			// if payload type is an fba chunk-type
 			if (payload.type.match(/^fbA/i)) {
-				if (isDirty || payload.dirty) {
-					// append content to fba-compiler
-					payload.modules.forEach(_module => {
+				// if payload type is an fba chunk-type
+				if (anyDirty) {
+					Object.keys(payload.modules).forEach(path => {
 						fbaAssets.push({
 							chunkType: payload.type,
-							path: _module
+							path: path
 						})
 					})
 				}
 			} else if (payload.type == 'inline') {
 				// if payload type is inline
-				if (payload.dirty) {
-					log('Inlining ->')
-					payload.modules.forEach(_module => {
-						log(` ${_module}`)
-					})
-				}
-			} else {
-				// if payload type is copy
-				if (payload.dirty) {
-					// copy the asset to deploy
-					promises.push(copier.copy(payload.modules, this.options.assets[i].copy))
-				}
-			}
-
-			// mark this payload clean
-			if (payload.name) {
-				this.DM.payload.store.update({
-					name: payload.name,
-					dirty: false
+				log('Inlining ->')
+				Object.keys(payload.modules).forEach(path => {
+					log(` ${path}`)
 				})
+			} else {
+				// copy the asset to deploy
+				promises.push(copier.copy(payload.modules, this.options.assets[i].copy))
 			}
 		}
 
