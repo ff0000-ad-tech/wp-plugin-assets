@@ -119,6 +119,13 @@ AssetsPlugin.prototype.apply = function(compiler) {
 
 		allFileDeps.forEach(this.loadBinaryImports)
 
+		// if there were binary assets, update ad.settings with the payload filename
+		if (this.DM.payload.store.anyFba()) {
+			this.options.output.hasFbaAssets(this.options.output.filename)
+		} else {
+			this.options.output.hasFbaAssets(false)
+		}
+
 		callback()
 	})
 
