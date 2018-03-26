@@ -69,7 +69,12 @@ function getDepsWithState(initState) {
 		return newState
 	}
 
-	return initState
+	return getDepsWithState({
+		resourceStack: resourceStack.slice(0, -1),
+		buildDeps,
+		modulesByResource,
+		seenModules
+	})
 }
 
 function getDepsRecursively(topResource, modulesByResource) {
