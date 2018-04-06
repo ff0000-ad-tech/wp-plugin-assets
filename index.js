@@ -98,7 +98,8 @@ AssetsPlugin.prototype.apply = function(compiler) {
 	// compiler.plugin('after-compile', (compilation, callback) => {
 	compiler.hooks.afterCompile.tapAsync(pluginName, (compilation, callback) => {
 		const { buildEntry } = this.options
-		const buildModule = compilation.modules.find(m => m.resource && m.resource === buildEntry)
+
+		const buildModule = compilation.entries.find(m => m.resource && m.resource === buildEntry)
 
 		/*
 			Gathering all of the filepaths within the build's dependency graph to pass into
@@ -108,7 +109,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			When using the Rollup Babel loader (i.e. production settings),
 			this Array should contain all of the build's dependencies in a flat array
 		*/
-		const fileDeps = buildModule.fileDependencies
+		const fileDeps = buildModule.dependencies
 
 		/* 
 			However, when using just the Babel loader (i.e. debug settings),
