@@ -89,13 +89,11 @@ function getDepsRecursively(topResource, modulesByResource) {
 const pluginName = 'FAT Assets Plugin'
 
 AssetsPlugin.prototype.apply = function(compiler) {
-	// compiler.plugin('compile', () => {
 	compiler.hooks.compile.tap(pluginName, () => {
 		// reset binary assets store on each compile
 		this.DM.payload.store.reset()
 	})
 
-	// compiler.plugin('after-compile', (compilation, callback) => {
 	compiler.hooks.afterCompile.tapAsync(pluginName, (compilation, callback) => {
 		const { buildEntry } = this.options
 
@@ -139,7 +137,6 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		callback()
 	})
 
-	// compiler.plugin('emit', (compilation, callback) => {
 	compiler.hooks.emit.tapAsync(pluginName, (compilation, callback) => {
 		var promises = []
 		var fbaAssets = []
