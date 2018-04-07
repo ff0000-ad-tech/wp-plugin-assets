@@ -9,6 +9,8 @@ const copier = require('./lib/copier.js')
 const debug = require('debug')
 var log = debug('wp-plugin-assets')
 
+const pluginName = 'FAT Assets Plugin'
+
 function AssetsPlugin(DM, options) {
 	if (!options.addBinaryAsset || !options.fbaTypes) {
 		throw new Error('addBinaryAsset function and array of FBA types are needed to load binary assets into FBA payload')
@@ -85,8 +87,6 @@ function getDepsRecursively(topResource, modulesByResource) {
 	const { buildDeps } = result
 	return buildDeps.filter(a => a)
 }
-
-const pluginName = 'FAT Assets Plugin'
 
 AssetsPlugin.prototype.apply = function(compiler) {
 	compiler.hooks.compile.tap(pluginName, () => {
