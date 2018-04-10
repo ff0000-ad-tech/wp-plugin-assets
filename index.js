@@ -3,7 +3,7 @@ const path = require('path')
 const _ = require('lodash')
 
 const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
-const createBinaryImporter = require('binary-imports')
+const createBinaryImporter = require('@ff0000-ad-tech/binary-imports')
 const copier = require('./lib/copier.js')
 
 const debug = require('@ff0000-ad-tech/debug')
