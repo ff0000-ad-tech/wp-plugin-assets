@@ -1,35 +1,35 @@
 {
-  "name": "@ff0000-ad-tech/wp-plugin-assets",
-  "publishConfig": {
-    "access": "public"
-  },
-  "version": "2.0.1",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "pub": "np"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ff0000-ad-tech/wp-plugin-assets.git"
-  },
-  "author": "RED Interactive Agency",
-  "license": "MIT",
-  "dependencies": {
-    "@ff0000-ad-tech/fba-compiler": "latest",
-    "binary-imports": "git+https://github.com/ff0000-ad-tech/binary-imports.git",
-    "debug": "git://github.com/gmcdev/debug.git",
-    "lodash": "^4.17.4",
-    "mkdir-recursive": "^0.3.0",
-    "ncp": "^2.0.0",
-    "walk": "^2.3.9"
-  },
-  "devDependencies": {
-    "babel-eslint": "^8.2.2",
-    "eslint": "^4.16.0",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-prettier": "^2.5.0",
-    "np": "^2.19.0",
-    "prettier": "^1.10.2"
-  }
+	"name": "@ff0000-ad-tech/wp-plugin-assets",
+	"publishConfig": {
+		"access": "public"
+	},
+	"version": "2.0.1",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"pub": "np"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ff0000-ad-tech/wp-plugin-assets.git"
+	},
+	"author": "RED Interactive Agency",
+	"license": "MIT",
+	"dependencies": {
+		"@ff0000-ad-tech/fba-compiler": "latest",
+		"@ff0000-ad-tech/binary-imports": "latest",
+		"debug": "git://github.com/gmcdev/debug.git",
+		"lodash": "^4.17.4",
+		"mkdir-recursive": "^0.3.0",
+		"ncp": "^2.0.0",
+		"walk": "^2.3.9"
+	},
+	"devDependencies": {
+		"babel-eslint": "^8.2.2",
+		"eslint": "^4.16.0",
+		"eslint-config-prettier": "^2.9.0",
+		"eslint-plugin-prettier": "^2.5.0",
+		"np": "^2.19.0",
+		"prettier": "^1.10.2"
+	}
 }
