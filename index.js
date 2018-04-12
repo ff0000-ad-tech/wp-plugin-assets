@@ -9,6 +9,8 @@ const copier = require('./lib/copier.js')
 const debug = require('@ff0000-ad-tech/debug')
 var log = debug('wp-plugin-assets')
 
+const pluginName = 'FAT Assets Plugin'
+
 function AssetsPlugin(DM, options) {
 	if (!options.addBinaryAsset || !options.fbaTypes) {
 		throw new Error('addBinaryAsset function and array of FBA types are needed to load binary assets into FBA payload')
@@ -87,14 +89,15 @@ function getDepsRecursively(topResource, modulesByResource) {
 }
 
 AssetsPlugin.prototype.apply = function(compiler) {
-	compiler.plugin('compile', () => {
+	compiler.hooks.compile.tap(pluginName, () => {
 		// reset binary assets store on each compile
 		this.DM.payload.store.reset()
 	})
 
-	compiler.plugin('after-compile', (compilation, callback) => {
+	compiler.hooks.afterCompile.tapAsync(pluginName, (compilation, callback) => {
 		const { buildEntry } = this.options
-		const buildModule = compilation.modules.find(m => m.resource && m.resource === buildEntry)
+
+		const buildModule = compilation.entries.find(m => m.resource && m.resource === buildEntry)
 
 		/*
 			Gathering all of the filepaths within the build's dependency graph to pass into
@@ -104,7 +107,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			When using the Rollup Babel loader (i.e. production settings),
 			this Array should contain all of the build's dependencies in a flat array
 		*/
-		const fileDeps = buildModule.fileDependencies
+		const fileDeps = buildModule.dependencies
 
 		/* 
 			However, when using just the Babel loader (i.e. debug settings),
@@ -134,7 +137,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		callback()
 	})
 
-	compiler.plugin('emit', (compilation, callback) => {
+	compiler.hooks.emit.tapAsync(pluginName, (compilation, callback) => {
 		var promises = []
 		var fbaAssets = []
 
