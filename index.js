@@ -5,7 +5,8 @@ const _ = require('lodash')
 const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const createBinaryImporter = require('@ff0000-ad-tech/binary-imports')
 const copier = require('./lib/copier.js')
-const getDepResourcesOnBuildEntry = require('./lib/getDepResourcesOnBuildEntry.js')
+const getDepsFromModule = require('./lib/getDepsFromModule.js')
+const getDepsWithModuleReason = require('./lib/getDepsWithModuleReason.js')
 
 const findAllKeys = require('find-all-keys')
 const debug = require('@ff0000-ad-tech/debug')
@@ -66,7 +67,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			}
 			return accum
 		}, {})
-		const resourcesOnBuildEntry = getDepResourcesOnBuildEntry(buildEntry, modulesByResource)
+		const resourcesOnBuildEntry = getDepsFromModule(buildEntry, modulesByResource)
 
 		/* 
 			Build modules have to be found differently with the Rollup Babel loader.
@@ -74,7 +75,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			so we'll have to check for compilation modules that list the build entry module
 			as a ModuleReason
 		*/
-		const resourcesWithBuildEntryReason = []
+		const resourcesWithBuildEntryReason = getDepsWithModuleReason(compilation.modules, buildModule)
 
 		const allDeps = resourcesOnBuildEntry.concat(resourcesWithBuildEntryReason)
 		allDeps.forEach(this.loadBinaryImports)
