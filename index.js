@@ -5,7 +5,9 @@ const _ = require('lodash')
 const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const createBinaryImporter = require('@ff0000-ad-tech/binary-imports')
 const copier = require('./lib/copier.js')
+const getDepsRecursively = require('./lib/getDepsRecursively.js')
 
+const findAllKeys = require('find-all-keys')
 const debug = require('@ff0000-ad-tech/debug')
 var log = debug('wp-plugin-assets')
 
@@ -42,52 +44,6 @@ function AssetsPlugin(DM, options) {
 	*/
 }
 
-function getDepsWithState(initState) {
-	const { resourceStack = [], modulesByResource, buildDeps = [], seenModules = {} } = initState
-
-	if (!resourceStack.length) {
-		return initState
-	}
-
-	const currResource = resourceStack[resourceStack.length - 1]
-	const currModule = modulesByResource[currResource]
-
-	if (currModule && !seenModules[currResource]) {
-		seenModules[currResource] = true
-		const depModules = currModule.dependencies.map(d => d.module).filter(a => a)
-		const depResources = depModules.map(dm => dm.resource)
-		const newBuildDeps = buildDeps.concat(depResources)
-		const newResourceStack = resourceStack
-			// remove currModule from stack
-			.slice(0, -1)
-			// put subdeps on stack
-			.concat(depResources)
-		const newState = getDepsWithState({
-			resourceStack: newResourceStack,
-			buildDeps: newBuildDeps,
-			modulesByResource,
-			seenModules
-		})
-		return newState
-	}
-
-	return getDepsWithState({
-		resourceStack: resourceStack.slice(0, -1),
-		buildDeps,
-		modulesByResource,
-		seenModules
-	})
-}
-
-function getDepsRecursively(topResource, modulesByResource) {
-	const result = getDepsWithState({
-		resourceStack: [topResource],
-		modulesByResource
-	})
-	const { buildDeps } = result
-	return buildDeps.filter(a => a)
-}
-
 AssetsPlugin.prototype.apply = function(compiler) {
 	compiler.hooks.compile.tap(pluginName, () => {
 		// reset binary assets store on each compile
@@ -98,7 +54,6 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		const { buildEntry } = this.options
 
 		const buildModule = compilation.entries.find(m => m.resource && m.resource === buildEntry)
-
 		/* 
 			When using just the Babel loader (i.e. debug settings),
 			the other dependencies are not included in the prior array
