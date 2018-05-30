@@ -5,7 +5,7 @@ const _ = require('lodash')
 const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const createBinaryImporter = require('@ff0000-ad-tech/binary-imports')
 const copier = require('./lib/copier.js')
-const getDepsRecursively = require('./lib/getDepsRecursively.js')
+const getDepResourcesOnBuildEntry = require('./lib/getDepResourcesOnBuildEntry.js')
 
 const findAllKeys = require('find-all-keys')
 const debug = require('@ff0000-ad-tech/debug')
@@ -66,9 +66,18 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			}
 			return accum
 		}, {})
-		const recursivelyFoundResources = getDepsRecursively(buildEntry, modulesByResource)
+		const resourcesOnBuildEntry = getDepResourcesOnBuildEntry(buildEntry, modulesByResource)
 
-		recursivelyFoundResources.forEach(this.loadBinaryImports)
+		/* 
+			Build modules have to be found differently with the Rollup Babel loader.
+			They can't be found as dependencies of the build.js entry
+			so we'll have to check for compilation modules that list the build entry module
+			as a ModuleReason
+		*/
+		const resourcesWithBuildEntryReason = []
+
+		const allDeps = resourcesOnBuildEntry.concat(resourcesWithBuildEntryReason)
+		allDeps.forEach(this.loadBinaryImports)
 
 		// if there were binary assets, update ad.settings with the payload filename
 		if (this.DM.payload.store.anyFba()) {
