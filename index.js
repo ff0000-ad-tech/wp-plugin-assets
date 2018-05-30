@@ -99,18 +99,8 @@ AssetsPlugin.prototype.apply = function(compiler) {
 
 		const buildModule = compilation.entries.find(m => m.resource && m.resource === buildEntry)
 
-		/*
-			Gathering all of the filepaths within the build's dependency graph to pass into
-			a function which filters out non-binary assets and formats binary assets
-			for the FBA compiler
-
-			When using the Rollup Babel loader (i.e. production settings),
-			this Array should contain all of the build's dependencies in a flat array
-		*/
-		const fileDeps = buildModule.dependencies
-
 		/* 
-			However, when using just the Babel loader (i.e. debug settings),
+			When using just the Babel loader (i.e. debug settings),
 			the other dependencies are not included in the prior array
 
 			So we'll need to search for these recursively
@@ -123,9 +113,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		}, {})
 		const recursivelyFoundResources = getDepsRecursively(buildEntry, modulesByResource)
 
-		const allFileDeps = fileDeps.concat(recursivelyFoundResources)
-
-		allFileDeps.forEach(this.loadBinaryImports)
+		recursivelyFoundResources.forEach(this.loadBinaryImports)
 
 		// if there were binary assets, update ad.settings with the payload filename
 		if (this.DM.payload.store.anyFba()) {
