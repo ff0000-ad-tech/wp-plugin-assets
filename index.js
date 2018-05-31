@@ -8,7 +8,6 @@ const copier = require('./lib/copier.js')
 const getDepsFromModule = require('./lib/getDepsFromModule.js')
 const getDepsWithModuleReason = require('./lib/getDepsWithModuleReason.js')
 
-const findAllKeys = require('find-all-keys')
 const debug = require('@ff0000-ad-tech/debug')
 var log = debug('wp-plugin-assets')
 
