@@ -13,4 +13,6 @@
 
 This plugin shepherds discovered binary-compilable assets from the Webpack dependency graph.
 
+The results are packaged using [@ff0000-ad-tech/fba-compiler](https://github.com/ff0000-ad-tech/fba-compiler).
+
 More docs forthcoming.
