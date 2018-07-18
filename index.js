@@ -5,9 +5,13 @@ const _ = require('lodash')
 const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
 const createBinaryImporter = require('@ff0000-ad-tech/binary-imports')
 const copier = require('./lib/copier.js')
+const getDepsFromModule = require('./lib/getDepsFromModule.js')
+const getDepsWithModuleReason = require('./lib/getDepsWithModuleReason.js')
 
 const debug = require('@ff0000-ad-tech/debug')
 var log = debug('wp-plugin-assets')
+
+const pluginName = 'FAT Assets Plugin'
 
 function AssetsPlugin(DM, options) {
 	if (!options.addBinaryAsset || !options.fbaTypes) {
@@ -40,74 +44,18 @@ function AssetsPlugin(DM, options) {
 	*/
 }
 
-function getDepsWithState(initState) {
-	const { resourceStack = [], modulesByResource, buildDeps = [], seenModules = {} } = initState
-
-	if (!resourceStack.length) {
-		return initState
-	}
-
-	const currResource = resourceStack[resourceStack.length - 1]
-	const currModule = modulesByResource[currResource]
-
-	if (currModule && !seenModules[currResource]) {
-		seenModules[currResource] = true
-		const depModules = currModule.dependencies.map(d => d.module).filter(a => a)
-		const depResources = depModules.map(dm => dm.resource)
-		const newBuildDeps = buildDeps.concat(depResources)
-		const newResourceStack = resourceStack
-			// remove currModule from stack
-			.slice(0, -1)
-			// put subdeps on stack
-			.concat(depResources)
-		const newState = getDepsWithState({
-			resourceStack: newResourceStack,
-			buildDeps: newBuildDeps,
-			modulesByResource,
-			seenModules
-		})
-		return newState
-	}
-
-	return getDepsWithState({
-		resourceStack: resourceStack.slice(0, -1),
-		buildDeps,
-		modulesByResource,
-		seenModules
-	})
-}
-
-function getDepsRecursively(topResource, modulesByResource) {
-	const result = getDepsWithState({
-		resourceStack: [topResource],
-		modulesByResource
-	})
-	const { buildDeps } = result
-	return buildDeps.filter(a => a)
-}
-
 AssetsPlugin.prototype.apply = function(compiler) {
-	compiler.plugin('compile', () => {
+	compiler.hooks.compile.tap(pluginName, () => {
 		// reset binary assets store on each compile
 		this.DM.payload.store.reset()
 	})
 
-	compiler.plugin('after-compile', (compilation, callback) => {
+	compiler.hooks.afterCompile.tapAsync(pluginName, (compilation, callback) => {
 		const { buildEntry } = this.options
-		const buildModule = compilation.modules.find(m => m.resource && m.resource === buildEntry)
 
-		/*
-			Gathering all of the filepaths within the build's dependency graph to pass into
-			a function which filters out non-binary assets and formats binary assets
-			for the FBA compiler
-
-			When using the Rollup Babel loader (i.e. production settings),
-			this Array should contain all of the build's dependencies in a flat array
-		*/
-		const fileDeps = buildModule.fileDependencies
-
+		const buildModule = compilation.entries.find(m => m.resource && m.resource === buildEntry)
 		/* 
-			However, when using just the Babel loader (i.e. debug settings),
+			When using just the Babel loader (i.e. debug settings),
 			the other dependencies are not included in the prior array
 
 			So we'll need to search for these recursively
@@ -118,11 +66,18 @@ AssetsPlugin.prototype.apply = function(compiler) {
 			}
 			return accum
 		}, {})
-		const recursivelyFoundResources = getDepsRecursively(buildEntry, modulesByResource)
+		const resourcesOnBuildEntry = getDepsFromModule(buildEntry, modulesByResource)
 
-		const allFileDeps = fileDeps.concat(recursivelyFoundResources)
+		/* 
+			Build modules have to be found differently with the Rollup Babel loader.
+			They can't be found as dependencies of the build.js entry
+			so we'll have to check for compilation modules that list the build entry module
+			as a ModuleReason
+		*/
+		const resourcesWithBuildEntryReason = getDepsWithModuleReason(compilation.modules, buildModule)
 
-		allFileDeps.forEach(this.loadBinaryImports)
+		const allDeps = resourcesOnBuildEntry.concat(resourcesWithBuildEntryReason)
+		allDeps.forEach(this.loadBinaryImports)
 
 		// if there were binary assets, update ad.settings with the payload filename
 		if (this.DM.payload.store.anyFba()) {
@@ -134,7 +89,7 @@ AssetsPlugin.prototype.apply = function(compiler) {
 		callback()
 	})
 
-	compiler.plugin('emit', (compilation, callback) => {
+	compiler.hooks.emit.tapAsync(pluginName, (compilation, callback) => {
 		var promises = []
 		var fbaAssets = []
 
