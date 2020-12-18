@@ -21,7 +21,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@ff0000-ad-tech/debug": "^4.0.2",
-		"@ff0000-ad-tech/fba-compiler": "git+ssh://git@github.com:ff0000-ad-tech/wp-plugin-assets.git#preact",
+		"@ff0000-ad-tech/fba-compiler": "git+ssh://git@github.com:ff0000-ad-tech/fba-compiler.git#preact",
 		"mkdirp": "^1.0.4",
 		"ncp": "^2.0.0"
 	},
