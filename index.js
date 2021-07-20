@@ -1,6 +1,6 @@
 const path = require('path')
 
-const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
+const aggregator = require('./lib/aggregator.js')
 const copier = require('./lib/copier.js')
 
 const debug = require('@ff0000-ad-tech/debug')
@@ -12,7 +12,7 @@ function AssetsPlugin(DM, options) {
 	log(`Preparing wp-plugin-assets`)
 	this.DM = DM
 	this.options = options
-	this.fbaAggregator = fbaCompiler.filter.createFbaAggregator(DM.payload.addBinaryAsset)
+	this.aggregator = aggregator.createAggregator(DM.payload.addBinaryAsset)
 
 	/** TODO
 			Document `this.options`:
@@ -58,25 +58,27 @@ AssetsPlugin.prototype.apply = function (compiler) {
 		// gather a list of dependency filepaths, in order to search for fba-assets
 		const filepaths = []
 		// https://webpack.js.org/contribute/plugin-patterns/#exploring-assets-chunks-modules-and-dependencies
-		compilation.chunks.forEach(chunk => {
+		compilation.chunks.forEach((chunk) => {
 			if (chunk.name === this.options.fba.entry) {
-				chunk.getModules().forEach(module => {
+				chunk.getModules().forEach((module) => {
 					module.buildInfo &&
 						module.buildInfo.fileDependencies &&
-						module.buildInfo.fileDependencies.forEach(filepath => {
+						module.buildInfo.fileDependencies.forEach((filepath) => {
 							filepaths.push(filepath)
 						})
 				})
 			}
 		})
 		// process each dependency as potential fba-asset
-		filepaths.forEach(this.fbaAggregator)
-		// if there were fba-assets, update ad.settings with the payload filename
-		if (this.DM.payload.store.anyFba()) {
-			this.options.fba.setPayloadReq(this.options.fba.output.filename)
+		filepaths.forEach(this.aggregator)
+		// if there were assets, update ad.settings with the asset filenames
+		if (this.DM.payload.store.anyAssets()) {
+			const payloads = this.DM.payload.store.getAll()
+			log({ payloads })
+			this.options.fba.setAssetReqs(payloads)
 		} else {
 			// otherwise make sure the index does not try to load fba-payload
-			this.options.fba.setPayloadReq()
+			this.options.fba.setAssetReqs()
 		}
 		callback()
 	})
@@ -100,44 +102,44 @@ AssetsPlugin.prototype.apply = function (compiler) {
 			payload.type = payload.type || 'copy'
 
 			// if payload type is an fba chunk-type
-			if (payload.type.match(/^fbA/i)) {
-				if (this.DM.payload.store.anyDirty()) {
-					Object.keys(payload.modules).forEach(path => {
-						fbaAssets.push({
-							chunkType: payload.type,
-							path: path
-						})
-					})
-				}
-			} else if (payload.type == 'inline') {
-				// if payload type is inline
-				log('Inlining ->')
-				Object.keys(payload.modules).forEach(path => {
-					log(` ${path}`)
-				})
-			} else {
-				// copy the asset to deploy
-				promises.push(copier.copy(payload.modules, this.options.assets[i].copy))
-			}
+			// if (payload.type.match(/^fbA/i)) {
+			// 	if (this.DM.payload.store.anyDirty()) {
+			// 		Object.keys(payload.modules).forEach((path) => {
+			// 			fbaAssets.push({
+			// 				chunkType: payload.type,
+			// 				path: path
+			// 			})
+			// 		})
+			// 	}
+			// } else if (payload.type == 'inline') {
+			// 	// if payload type is inline
+			// 	log('Inlining ->')
+			// 	Object.keys(payload.modules).forEach((path) => {
+			// 		log(` ${path}`)
+			// 	})
+			// } else {
+			// copy the asset to deploy
+			promises.push(copier.copy(payload.modules, this.options.assets[i].copy))
+			// }
 		}
 
 		// compile all the assets
-		const { context, filename } = this.options.fba.output
-		if (!this.options.fba.base64Inline && fbaAssets.length) {
-			promises.push(
-				fbaCompiler.compile({
-					target: path.resolve(`${context}/${filename}`),
-					assets: fbaAssets
-				})
-			)
-		}
+		// const { context, filename } = this.options.fba.output
+		// if (!this.options.fba.base64Inline && fbaAssets.length) {
+		// 	promises.push(
+		// 		fbaCompiler.compile({
+		// 			target: path.resolve(`${context}/${filename}`),
+		// 			assets: fbaAssets
+		// 		})
+		// 	)
+		// }
 
 		// return to webpack flow
 		Promise.all(promises)
 			.then(() => {
 				callback()
 			})
-			.catch(err => {
+			.catch((err) => {
 				log(err)
 			})
 	})
