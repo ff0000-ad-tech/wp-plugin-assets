@@ -1,5 +1,7 @@
 const path = require('path')
 
+const fbaCompiler = require('@ff0000-ad-tech/fba-compiler')
+
 const filterer = require('./lib/filterer.js')
 const copier = require('./lib/copier.js')
 
@@ -12,29 +14,13 @@ function AssetsPlugin(DM, options) {
 	log(`Preparing wp-plugin-assets`)
 	this.DM = DM
 	this.options = options
+	log(this.options)
+	// prepare filteres to apply discovered assets to DM.store
+	// see wp-deploy-manager/lib/plugins/asset-config... files for more info
 	this.aggregators = this.options.aggregators.map((aggregator) => {
 		aggregator.filterer = filterer.getFilterFactory(aggregator)
 		return aggregator
 	})
-
-	/** TODO
-			Document `this.options`:
-
-			this.options.assets = [
-				{
-					payload: [
-						// payload objects (see wp-plugin-payload)
-						{
-							modules: [] // subpaths to file locations
-						}
-					],
-					copy: {
-						from: './source-context',
-						to: './destination-context'
-					}
-				}
-			]
-	*/
 }
 
 AssetsPlugin.prototype.apply = function (compiler) {
@@ -99,51 +85,42 @@ AssetsPlugin.prototype.apply = function (compiler) {
 	 *
 	 */
 	compiler.hooks.emit.tapAsync(pluginName, (compilation, callback) => {
-		// var promises = []
-		// var fbaAssets = []
+		const promises = []
+		const fbaAssets = []
 		// iterate assets
-		const promises = this.options.emitters.map(async (emitter) => {
-			if (!emitter.copy) {
-				return
+		this.options.emitters.forEach(async (emitter) => {
+			// will bundle assets in binary payload
+			if (emitter.fba) {
+				log('FBA Assembling ->')
+				log({ fba: emitter.fba.sources() })
+				emitter.fba.sources().forEach((assetPath) => {
+					fbaAssets.push({
+						output: emitter.fba.to,
+						chunkType: emitter.fba.type,
+						path: assetPath
+					})
+				})
 			}
-			log({ sources: emitter.copy.sources() })
-			return await copier.copy(emitter.copy.sources(), emitter.copy)
+			// will load assets at runtime, so copy them to dist
+			if (emitter.copy) {
+				promises.push(copier.copy(emitter.copy.sources(), emitter.copy))
+			}
+			// will inline the assets as base64
+			if (emitter.inline) {
+				log('Inlining ->')
+				log({ inline: emitter.inline.sources() })
+				Object.keys(emitter.inline.sources().modules).forEach((path) => {
+					log(` ${path}`)
+				})
+			}
 		})
-
-		// payload.type = payload.type || 'copy'
-
-		// if payload type is an fba chunk-type
-		// if (payload.type.match(/^fbA/i)) {
-		// 	if (this.DM.payload.store.anyDirty()) {
-		// 		Object.keys(payload.modules).forEach((path) => {
-		// 			fbaAssets.push({
-		// 				chunkType: payload.type,
-		// 				path: path
-		// 			})
-		// 		})
-		// 	}
-		// } else if (payload.type == 'inline') {
-		// 	// if payload type is inline
-		// 	log('Inlining ->')
-		// 	Object.keys(payload.modules).forEach((path) => {
-		// 		log(` ${path}`)
-		// 	})
-		// } else {
-		// copy the asset to deploy
-		// promises.push()
-		// }
-
+		log({ dirty: this.DM.payload.store.anyDirty(), assets: fbaAssets.length })
 		// compile all the assets
-		// const { context, filename } = this.options.fba.output
-		// if (!this.options.fba.base64Inline && fbaAssets.length) {
-		// 	promises.push(
-		// 		fbaCompiler.compile({
-		// 			target: path.resolve(`${context}/${filename}`),
-		// 			assets: fbaAssets
-		// 		})
-		// 	)
-		// }
-
+		// only recompile if assets were updated
+		if (fbaAssets.length && this.DM.payload.store.anyDirty()) {
+			log('FBA Compiling ->')
+			promises.push(fbaCompiler.compile(fbaAssets))
+		}
 		// return to webpack flow
 		Promise.all(promises)
 			.then(() => {
