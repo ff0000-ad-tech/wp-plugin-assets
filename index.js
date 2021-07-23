@@ -88,8 +88,6 @@ AssetsPlugin.prototype.apply = function (compiler) {
 		this.options.emitters.forEach(async (emitter) => {
 			// will bundle assets in binary payload
 			if (emitter.fba) {
-				log('FBA Assembling ->')
-				log({ fba: emitter.fba.sources() })
 				emitter.fba.sources().forEach((assetPath) => {
 					fbaAssets.push({
 						output: emitter.fba.to,
@@ -111,11 +109,9 @@ AssetsPlugin.prototype.apply = function (compiler) {
 				})
 			}
 		})
-		log({ dirty: this.DM.payload.store.anyDirty(), assets: fbaAssets.length })
 		// compile all the assets
 		// only recompile if assets were updated
-		if (fbaAssets.length && this.DM.payload.store.anyDirty()) {
-			log('FBA Compiling ->')
+		if (fbaAssets.length) {
 			promises.push(fbaCompiler.compile(fbaAssets))
 		}
 		// return to webpack flow
