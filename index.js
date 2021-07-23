@@ -14,7 +14,6 @@ function AssetsPlugin(DM, options) {
 	log(`Preparing wp-plugin-assets`)
 	this.DM = DM
 	this.options = options
-	log(this.options)
 	// prepare filteres to apply discovered assets to DM.store
 	// see wp-deploy-manager/lib/plugins/asset-config... files for more info
 	this.aggregators = this.options.aggregators.map((aggregator) => {
@@ -66,9 +65,7 @@ AssetsPlugin.prototype.apply = function (compiler) {
 		})
 		// if there were assets, update ad.settings with the asset filenames
 		this.aggregators.forEach((aggregator) => {
-			log({ type: aggregator.filter.type })
 			const sources = this.DM.payload.store.getSourcesBy(aggregator.filter.type)
-			log({ sources })
 			const relativePaths = sources.map((source) => {
 				return path.normalize(`${aggregator.filter.type}/${path.basename(source)}`)
 			})
